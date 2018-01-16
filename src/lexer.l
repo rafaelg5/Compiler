@@ -1,5 +1,6 @@
 %{
 #include <stdlib.h>
+//#include "parser.tab.h"
 
 extern void yyerror(char*);
 
@@ -14,19 +15,20 @@ int commentDepth = 0;
 id [a-zA-Z_][a-zA-Z0-9_]*
 integer [0-9]+
 blank [ \t\n]
-operator [+-*/%=!<>]
-misc [.;:,{}[]()]
+operator [-+\*\/%=!<>]
+misc [.;:,{}\[\]()]
 
 %%
 
-<comment> {
-            \n  { ++yylineno; }
-            "*/"  { commentDepth--; if(commentDepth == 0) BEGIN(INITIAL); }
-            "/*"  { commentDepth++; }
-            <<EOF>> { yyerror("Comentario sin cerrar"); }
-            [^*/\n]*  { } // ignorar todo lo que no sea '*' o '/'
-            . { } // Ignorar cualquier otro caracter
-          }
+<comment>
+{
+\n  { ++yylineno; }
+"*/"  { commentDepth--; if(commentDepth == 0) BEGIN(INITIAL); }
+"/*"  { commentDepth++; }
+<<EOF>> { yyerror("Comentario sin cerrar"); }
+[^*/\n]*  { } // ignorar todo lo que no sea '*' o '/'
+. { } // Ignorar cualquier otro caracter
+}
 
 int { yylval.line = yylineno; return INT; }
 
