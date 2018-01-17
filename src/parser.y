@@ -168,7 +168,7 @@ sents:
   | FOR '(' sents ';' logical ';' sents ')' sents	{}
   | DO sents WHILE '(' logical ')' ';'	{}
   | WHILE '(' logical ')' sents	{}
-  | IF '(' logical ')' sents %prec IFX	{} 
+  | IF '(' logical ')' sents %prec IFX	{}
   | IF '(' logical ')' sents ELSE sents	{}
   | SWITCH '(' expression ')' '{' cases case_def '}'	{}
   | BREAK ';'	{}
@@ -194,7 +194,7 @@ arrays:
 
 cases:
   CASE ':' NUMERO sents cases {}
-  | $empty	{}
+  | %empty	{}
   ;
 
 case_def:
