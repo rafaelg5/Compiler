@@ -45,7 +45,7 @@
 %type<num> NUMERO
 %type<flo> FLOTANTE
 %type<cad> CADENA ID CARACTER relation
-%type<att> type type_arr param_arr param_list sents params cases case_default ids arrays expression logical id_list
+%type<att> type type_arr param_arr param_list sents params cases case_def ids arrays expression logical id_list
 
 %left OR
 %left AND
@@ -351,4 +351,13 @@ void error(char *msg, int line)
 void init()
 {
 	table = init_sym_table();
+}
+
+int main(int argc, char** argv){
+    if(argc>1){
+        yyin = fopen(argv[1], "r");
+        if(!yyin) return 1;
+        yyparse();
+        fclose(yyin);
+    }
 }
