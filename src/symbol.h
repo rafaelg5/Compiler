@@ -6,7 +6,7 @@
 typedef struct intermediate_symbol {
 	int type, dim;
 	int is_arr;
-	char id[32];
+	char id[60];
 } symbol;
 
 symbol *new_inter_symbol()

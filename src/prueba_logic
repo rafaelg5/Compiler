@@ -1,0 +1,14 @@
+int a, b;
+float c;
+double d;
+char e;
+
+struct {
+	int x;
+	char y;
+} s;
+
+func void logica(){
+	if(a<b||b<a&&a<c)
+		a=1;
+}

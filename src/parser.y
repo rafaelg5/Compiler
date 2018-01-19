@@ -19,12 +19,18 @@
   // Memory address for new vars
   int address = 0;
 
+  // Temporal variables
+  int temp = 0;
+
   // Symbol table
   Sym_Table *table; 
 
   // Aux functions
   void init();
   void error(char *msg, int line);
+
+  symbol *operacion(symbol *arg1, symbol *arg2, char *op);
+  char *get_temporal();
 %}
 
 %start program
@@ -70,6 +76,9 @@ program:
   }
   decs
   funcs
+  {
+  print_code();
+  }
   ;
 
 // D -> T L; D | epsilon
@@ -168,7 +177,18 @@ type_arr:
 
 // F -> func T id( A ){ D S } F_1 | epsilon
 funcs:
-  FUNC type ID '(' params ')' '{' decs sents '}' funcs
+  FUNC type ID 
+  {
+    insert_code("label","","", $3);
+  }
+  '(' params ')' '{' decs sents '}' 
+  {
+    char *tmp, *lab;
+    tmp = (char*) malloc(strlen($3)+4);
+    sprintf(tmp, "%s%s", "end", $3);
+    insert_code("label","","", tmp);
+  }
+  funcs
   | %empty
   ;
 
@@ -246,18 +266,46 @@ sents:
   | '{' sents '}'	{
 			$$ = $2;
 			}
-  | ids '=' expression ';'	{}
+  | ids '=' expression ';'	{
+    $$ = new_inter_symbol();
+
+    char *tmp = strdup("=");
+    insert_code(tmp, $3->id, "", $1->id);
+    free(tmp);
+  }
   ;
 
 ids:
-  ID	{}
-  | arrays	{}
-  | ID '.' ID {}
+  ID	{
+    $$ = new_inter_symbol();
+
+    //Para el codigo intermedio
+    strcpy($$->id, $1);
+  }
+  | arrays	{
+    $$ = $1;
+  }
+  | ID '.' ID {
+    $$ = new_inter_symbol();
+
+    //Para el codigo intermedio
+    sprintf($$->id, "%s.%s", $1, $3);
+  }
   ;
 
 arrays:
-  ID '[' expression ']'	{}
-  | arrays '[' expression ']'	{}
+  ID '[' expression ']'	{
+    $$ = new_inter_symbol();
+
+    //Para el codigo intermedio
+    sprintf($$->id, "%s[%s]", $1, $3->id);
+  }
+  | arrays '[' expression ']'	{
+    $$ = new_inter_symbol();
+
+    //Para el codigo intermedio
+    sprintf($$->id, "%s[%s]", $1->id, $3->id);
+  }
   ;
 
 cases:
@@ -272,67 +320,127 @@ case_def:
 
 expression:
   expression '*' expression	{
-				$$ = new_inter_symbol();
+  				// Generar codigo intermedio
+          char *tmp = strdup("*");
+          $$ = operacion($1, $3, tmp);
+          free(tmp);
 				}
   | expression '/' expression	{
-				$$ = new_inter_symbol();
+  				// Generar codigo intermedio
+          char *tmp = strdup("/");
+          $$ = operacion($1, $3, tmp);
+          free(tmp);
 				}
   | expression '+' expression	{
-				$$ = new_inter_symbol();
+          // Generar codigo intermedio
+          char *tmp = strdup("+");
+          $$ = operacion($1, $3, tmp);
+          free(tmp);
 				}
   | expression '-' expression	{
-				$$ = new_inter_symbol();
+  				// Generar codigo intermedio
+          char *tmp = strdup("-");
+          $$ = operacion($1, $3, tmp);
+          free(tmp);
 				}
   | expression '%' expression	{
-				$$ = new_inter_symbol();
+  				// Generar codigo intermedio
+          char *tmp = strdup("%");
+          $$ = operacion($1, $3, tmp);
+          free(tmp);
 				}
   | ids	{
-	$$ = new_inter_symbol();
-	$$->type = $1->type;
+	 $$ = new_inter_symbol();
+	 $$->type = $1->type;
+
+   //Para el codigo intermedio
+    sprintf($$->id, "%s", $1->id);
 	}
-  | CADENA	{}
+  | CADENA	{
+    $$ = new_inter_symbol();
+
+    //Para el codigo intermedio
+    sprintf($$->id, "\"%s\"", $1);
+  }
 
   | NUMERO	{
 		$$ = new_inter_symbol();
 		$$->type = 0;
+
+    // Para el codigo intermedio
+    sprintf($$->id, "%d", $1);
 		}
   | FLOTANTE	{
 		$$ = new_inter_symbol();
 		$$->type = 1;
+
+    // Para el codigo intermedio
+    sprintf($$->id, "%f", $1);
 		}
   | CARACTER	{
+    $$ = new_inter_symbol();
 		$$->type = 3;
+
+    //Para el codigo intermedio
+    sprintf($$->id, "'%c'", $1);
 		}
-  | ID '(' arguments ')' {}
+  | ID '(' arguments ')' {
+    // Para el codigo intermedio 
+    // falta hacer el llamado a la funcion aqui
+    $$ = new_inter_symbol();
+
+    // Temp
+    char *tmp = get_temporal();
+    insert_code("call", $1, "", tmp);
+
+    strcpy($$->id, tmp);
+    
+    free(tmp);
+  }
   ;
 
 // H
 arguments:
   arguments ',' expression	{
 				$$ = new_inter_symbol();
+        insert_code("push", $3->id, "", "");
 				}
   | expression			{
 				$$ = new_inter_symbol();
+        insert_code("push", $1->id, "", "");
           			}
   ;
 
 // B
 logical:
   logical OR logical	{
-			$$ = new_inter_symbol();
+			$$ = operacion($1, $3, "||");
 			}
   | logical AND logical	{
-			$$ = new_inter_symbol();
+			$$ = operacion($1, $3, "&&");
 			}
   | '!' logical		{
 			$$ = new_inter_symbol();
+      char *tmp = get_temporal();
+      insert_code("!", $2->id, "", tmp);
+      strcpy($$->id, tmp);
+      free(tmp);
 			}
   | '(' logical ')'	{
 			$$ = $2;
 			}
-  | expression relation expression	{}
-  | TRUE_P	{}
-  | FALSE_P	{}
+  | expression relation expression	{
+    $$ = operacion($1, $3, $2);
+
+  }
+  | TRUE_P	{
+    $$ = new_inter_symbol();
+    strcpy($$->id, "true");
+  }
+  | FALSE_P	{
+    $$ = new_inter_symbol();
+    strcpy($$->id, "false");
+  }
   ;
 
 relation:
@@ -360,7 +468,7 @@ relation:
 
 void yyerror(char *s)
 {
-	fprintf(stderr, "%s\n", s);
+	fprintf(stderr, "%s en linea %d\n", s, yylineno);
 }
 
 void error(char *msg, int line)
@@ -371,7 +479,31 @@ void error(char *msg, int line)
 void init()
 {
 	table = init_sym_table();
+  init_code();
 }
+
+symbol *operacion(symbol *arg1, symbol *arg2, char *op){
+  symbol *res = new_inter_symbol();
+
+  char *tmp = get_temporal();
+
+  insert_code(op, arg1->id, arg2->id, tmp);
+
+  strcpy(res->id, tmp);
+
+  free(tmp);
+
+  return res;
+}
+
+char *get_temporal(){
+  temp++;
+  char tmp[7];
+  sprintf(tmp, "%c%d", 't', temp);
+
+  return strdup(tmp);
+}
+
 
 int main(int argc, char** argv){
     if(argc>1){
