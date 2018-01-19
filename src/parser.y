@@ -254,10 +254,62 @@ param_arr:
   ;
 
 sents:
-  sents sents	{}
-  | FOR '(' sents ';' logical ';' sents ')' sents	{}
-  | DO sents WHILE '(' logical ')' ';'	{}
-  | WHILE '(' logical ')' sents	{}
+  sents sents	
+  {
+    $$ = new_inter_symbol();
+
+    backpatch($1->lnext, $2->first);
+
+    $$->first = $1->first;
+    $$->lnext = $2->lnext;
+  }
+  | FOR '(' sents ';' logical ';' sents {
+    
+    int line = insert_code("goto", "", "", "");
+    $7->lnext = insert_in_label($7->lnext, line);
+    } ')' sents	
+    {
+      $$ = new_inter_symbol();
+
+      char tmp[10];
+      sprintf(tmp, "%d", $7->first);
+      int line = insert_code("goto", "", "", tmp);
+
+      $$->first = $3->first;
+
+      backpatch($3->lnext, $5->first);
+
+      backpatch($5->ltrue, $10->first);
+      backpatch($10->lnext, $7->first);
+      backpatch($7->lnext, $5->first);
+
+      $$->lnext = $5->lfalse;
+    }
+  | DO sents WHILE '(' logical ')' ';'
+  {
+    $$ = new_inter_symbol();
+
+    $$->first = $2->first;
+
+    backpatch($2->lnext, $5->first);
+    backpatch($5->ltrue, $2->first);
+
+    $$->lnext = $5->lfalse;
+  }
+  | WHILE '(' logical ')' sents	
+  {
+    $$ = new_inter_symbol();
+
+    $$->first = $3->first;
+    backpatch($3->ltrue, $5->first);
+    backpatch($5->lnext, $3->first);
+
+    $$->lnext = $3->lfalse;
+
+    char tmp[10];
+    sprintf(tmp, "%d", $3->first);
+    int line = insert_code("goto", "", "", tmp);
+  }
   | IF '(' logical ')' sents %prec IFX	
   {
     $$ = new_inter_symbol();
@@ -267,12 +319,54 @@ sents:
     $$->lnext = merge($3->lfalse, $5->lnext);
 
   }
-  | IF '(' logical ')' sents ELSE sents	{}
-  | SWITCH '(' expression ')' '{' cases case_def '}'	{}
-  | BREAK ';'	{}
-  | PRINT expression ';'	{}
-  | RETURN expression ';'	{}
-  | RETURN ';'	{}
+  | IF '(' logical ')' sents ELSE sents	
+  {
+    $$ = new_inter_symbol();
+
+    $$->first = $3->first;
+
+    backpatch($3->ltrue, $5->first);
+    backpatch($3->lfalse, $7->first);
+
+    $$->lnext = merge($5->lnext, $7->lnext);
+  }
+  | SWITCH '(' expression ')' '{' cases case_def '}'	
+  {
+    // TODO
+    $$ = new_inter_symbol();
+  }
+  | BREAK ';'	
+  {
+    // TODO
+    $$ = new_inter_symbol();
+  }
+  | PRINT expression ';'	
+  {
+    $$ = new_inter_symbol();
+
+    int line = insert_code("print", $2->id, "", "");
+
+    if($2->first == -1)
+      $$->first = line;
+    else
+      $$->first = $2->first;
+  }
+  | RETURN expression ';'	
+  {
+    $$ = new_inter_symbol();
+
+    int line = insert_code("return", $2->id, "", "");
+
+    if($2->first == -1)
+      $$->first = line;
+    else
+      $$->first = $2->first;
+  }
+  | RETURN ';'	
+  {
+    $$ = new_inter_symbol();
+    int line = insert_code("return", "", "", "");
+  }
   | '{' sents '}'	{
 			$$ = $2;
 			}
@@ -324,12 +418,18 @@ arrays:
   ;
 
 cases:
-  CASE ':' NUMERO sents cases {}
+  CASE ':' NUMERO sents cases 
+  {
+    //TODO
+  }
   | %empty	{}
   ;
 
 case_def:
-  DEFAULT ':' sents	{}
+  DEFAULT ':' sents	
+  {
+    //TODO
+  }
   | %empty	{}
   ;
 
@@ -411,7 +511,10 @@ expression:
     strcpy($$->id, tmp);
     free(tmp);
 
-    $$->first = line;
+    if($3->first == -1)
+      $$->first = line;
+    else
+      $$->first = $3->first;
   }
   ;
 
@@ -421,12 +524,22 @@ arguments:
 				$$ = new_inter_symbol();
         int line = insert_code("push", $3->id, "", "");
 
-        $$->first = line; 
+        if($1->first != -1)
+          $$->first = $1->first;
+        else if($3->first != -1)
+          $$->first = $3->first;
+        else
+          $$->first = line;
 				}
   | expression			{
 				$$ = new_inter_symbol();
         int line = insert_code("push", $1->id, "", "");
-        $$->first = line;
+        
+        if($1->first == -1)
+          $$->first = line;
+        else
+          $$->first = $1->first;
+
       }
   ;
 

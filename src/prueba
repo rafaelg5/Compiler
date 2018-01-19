@@ -22,15 +22,31 @@ func void expresiones(){
 	b[1] = "algo"*3.0+1;
 }
 
-func void logical(){
+func void logica(){
+	if(a<b-1*4 || (b>=a&&a<=c+5) || !false)
+		a=1+3-2%5;
+}
+
+func void fors(){
+	int a, b;
+	b = 1;
+	for(a = 0; a = 1; ; a<10 ; a = a+1; b = suma(a,b);)
+		b = b+a+1; print b; return;
+}
+
+func void whiles(){
+	int a, b;
+	a = 0; b = 1;
+
+	while(a +b < 10)
+		a = a*2;
+		b = b-1;
+		break;
+
 	return;
 }
 
-
-
-
-func int main(){
-	x[y][5+3] = a[1+2-3%4][c.d];
-	str = "hi";
-	a = b+c*9+6-3.0/4;
+func void dowhiles(){
+	int a, b;
+	b = 0;
 }
