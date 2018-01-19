@@ -34,11 +34,11 @@ Type_Table* init_type_table(){
     tt->types = (List*) malloc(sizeof(List));
     tt->count = 5;
 
-    add_element_to_list(tt->types, new_type(INT, 4));
-    add_element_to_list(tt->types, new_type(FLOAT, 4));
-    add_element_to_list(tt->types, new_type(DOUBLE, 8));
-    add_element_to_list(tt->types, new_type(CHAR, 1));
-    add_element_to_list(tt->types, new_type(VOID, 0));
+    add_element_to_list(tt->types, new_type(INT_T, 4));
+    add_element_to_list(tt->types, new_type(FLOAT_T, 4));
+    add_element_to_list(tt->types, new_type(DOUBLE_T, 8));
+    add_element_to_list(tt->types, new_type(CHAR_T, 1));
+    add_element_to_list(tt->types, new_type(VOID_T, 0));
 
     return tt;
 }

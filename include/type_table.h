@@ -2,11 +2,11 @@
 #define TYPE_TABLE_H
 
 // tipos base
-#define INT 0
-#define FLOAT 1
-#define DOUBLE 2
-#define CHAR 3
-#define VOID 4
+#define INT_T 0
+#define FLOAT_T 1
+#define DOUBLE_T 2
+#define CHAR_T 3
+#define VOID_T 4
 
 /*
 * Estructura para listas genéricas.

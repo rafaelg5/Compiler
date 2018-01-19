@@ -3,13 +3,13 @@
 
 #include <stdlib.h>
 
-typedef struct symbol {
+typedef struct intermediate_symbol {
 	int type, dim;
 	int is_arr;
-	char[32] id;
+	char id[32];
 } symbol;
 
-symbol *new_symbol()
+symbol *new_inter_symbol()
 {
 	symbol *s = (symbol*) malloc (sizeof(symbol));
 	

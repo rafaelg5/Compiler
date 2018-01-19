@@ -1,6 +1,6 @@
 %{
 #include <stdlib.h>
-//#include "parser.tab.h"
+#include "parser.tab.h"
 
 extern void yyerror(char*);
 
@@ -93,7 +93,7 @@ print { return PRINT; }
                       }
 
 \'\\.\' {
-          yylval.car = strdup(yytext);
+          yylval.cad = strdup(yytext);
           return CARACTER;
         }
 

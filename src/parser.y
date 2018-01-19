@@ -2,6 +2,7 @@
   #include <string.h>
   #include <stdio.h>
   #include "symbol.h"
+  #include "../include/sym_table.h"
 
   extern FILE *yyin;
   extern FILE *yyout;
@@ -13,15 +14,24 @@
   // inherited vars
   int inh_type, inh_dim;
 
+  // Memory address for new vars
+  int address = 0;
+
+  // Symbol table
+  Sym_Table *table; 
+
+  // Aux functions
+  void init();
+  void error(char *msg, int line);
 %}
 
 %start program
 
 %union {
-  char car[32];
+  char* cad;
   int num;
   double flo;
-  char *cad;
+  struct intermediate_symbol *att;
   char *id;
 }
 
@@ -32,11 +42,10 @@
 %token FUNC RETURN PRINT
 %token TRUE FALSE ID LE GE EQ NEQ AND OR
 
-%type<car> CARACTER
 %type<num> NUMERO
 %type<flo> FLOTANTE
-%type<cad> CADENA
-%type<att> type_arr param_arr param_list sents params cases case_default ids arrays expression logical relational
+%type<cad> CADENA ID CARACTER relation
+%type<att> type type_arr param_arr param_list sents params cases case_default ids arrays expression logical id_list
 
 %left OR
 %left AND
@@ -48,19 +57,24 @@
 %nonassoc IFX
 %nonassoc ELSE
 
-
 %%
 
 // P -> D F
 program:
+  {
+  printf("a\n");
+  init();
+  printf("a\n");
+  }
   decs funcs
   ;
 
 // D -> T L; D | epsilon
 decs:
   type  {
-	inh_type = $1.type;
-	inh_dim = $1.dim;
+	inh_type = $1->type;
+	inh_dim = $1->dim;
+	printf("%d\n", $1->type);
 	}
   id_list ';' decs
   | %empty
@@ -69,51 +83,68 @@ decs:
 // T -> buncha types
 type:
   INT  		{
-		$$ = new_symbol();
-		$$.type = 0;
-		$$.dim = 4;
+		$$ = new_inter_symbol();
+		$$->type = 0;
+		$$->dim = 4;
 		}
   | FLOAT  	{
-		$$ = nuevo_simbolo_gram();
-            	$$.type = 1;
-            	$$.dim = 4;
+		$$ = new_inter_symbol();
+            	$$->type = 1;
+            	$$->dim = 4;
            	}
   | DOUBLE	{
-            	$$ = nuevo_simbolo_gram();
-            	$$.type = 2;
-            	$$.dim = 8;
+            	$$ = new_inter_symbol();
+            	$$->type = 2;
+            	$$->dim = 8;
             	}
   | CHAR	{
-            	$$ = nuevo_simbolo_gram();
-            	$$.type = 3;
-            	$$.dim = 1;
+            	$$ = new_inter_symbol();
+            	$$->type = 3;
+            	$$->dim = 1;
             	}
   | VOID	{
-            	$$ = nuevo_simbolo_gram();
-            	$$.type = 4;
-            	$$.dim = 0;
+            	$$ = new_inter_symbol();
+            	$$->type = 4;
+            	$$->dim = 0;
             	}
   | STRUCT '{' decs '}'
   ;
 
 // L -> L, id C | id C
 id_list:
-  id_list ',' ID type_arr
-  | ID type_arr
+  id_list ','
+  ID type_arr	{
+		if(lookup(table, $3) != NULL)
+		{
+			insert(table, $3, $4->type, address);
+			address += $4->dim;
+		} else {
+			error("ID defined twice.", yylineno);
+		}
+		}
+  | ID type_arr	{
+		if(lookup(table, $1) != NULL)
+		{
+			insert(table, $1, $2->type, address);
+			address += $2->dim;
+		} else {
+			error("ID defined twice.", yylineno);
+		}
+		}
   ;
 
 // C -> [ numero ] C | epsilon
 type_arr:
   '[' NUMERO ']' type_arr	{
 				$$ = $4;
-				$$.is_arr = 1;
-				$$.type = $4.type;
-				$$.dim = $2 * $4.dim;
+				$$->is_arr = 1;
+				$$->type = $4->type;
+				$$->dim = $2 * $4->dim;
 				}
   | %empty			{
-				$$ = new_symbol();
-				$$.type = inh_type;
-				$$.dim = inh_dim
+				$$ = new_inter_symbol();
+				$$->type = inh_type;
+				$$->dim = inh_dim;
 				}
   ;
 
@@ -133,33 +164,50 @@ params:
   ;
 
 param_list:
-  param_list	{
-		$$ = $1;
-		}
+  param_list	
   ',' type	{
-		inh_type = $4.type;
-		inh_dim = $4.dim;
+		inh_type = $3->type;
+		inh_dim = $3->dim;
 		}
-  ID param_arr
+  ID param_arr	{
+		$$ = $1;
+
+		if(lookup(table, $5) != NULL)                              
+                {                                                          
+                        insert(table, $5, $6->type, address);                   
+                        address += $6->dim;                                     
+                } else {                                                   
+                        error("ID defined twice.", yylineno);              
+                } 
+		}
   | type	{
-		inh_type = $1.type;
-		inh_dim = $1.dim;
-		$$ = NULL;
+		inh_type = $1->type;
+		inh_dim = $1->dim;
 		}
-  ID param_arr
+  ID param_arr	{
+		$$ = NULL;
+
+		if(lookup(table, $3) != NULL)                              
+                {                                                          
+                        insert(table, $3, $4->type, address);                   
+                        address += $4->dim;                                     
+                } else {                                                   
+                        error("ID defined twice.", yylineno);              
+                }
+		}
   ;
 
 param_arr:
   '[' ']' param_arr	{
 			$$ = $3;
-			$$.dim = 8;
-			$$.is_arr = 1;
-			$$.type = $3.type;
+			$$->dim = 8;
+			$$->is_arr = 1;
+			$$->type = $3->type;
 			}
   | %empty	{
-		$$ = new_symbol();
-		$$.type = inh_type;
-		$$.dim = inh_dim;
+		$$ = new_inter_symbol();
+		$$->type = inh_type;
+		$$->dim = inh_dim;
 		}
   ;
 
@@ -204,36 +252,36 @@ case_def:
 
 expression:
   expression '*' expression	{
-				$$ = new_symbol();
+				$$ = new_inter_symbol();
 				}
   | expression '/' expression	{
-				$$ = new_symbol();
+				$$ = new_inter_symbol();
 				}
   | expression '+' expression	{
-				$$ = new_symbol();
+				$$ = new_inter_symbol();
 				}
   | expression '-' expression	{
-				$$ = new_symbol();
+				$$ = new_inter_symbol();
 				}
   | expression '%' expression	{
-				$$ = new_symbol();
+				$$ = new_inter_symbol();
 				}
   | ids	{
-	$$ = new_symbol();
-	$$.type = $1.type;
+	$$ = new_inter_symbol();
+	$$->type = $1->type;
 	}
   | CADENA	{}
 
   | NUMERO	{
-		$$ = new_symbol();
-		$$.type = 0;
+		$$ = new_inter_symbol();
+		$$->type = 0;
 		}
   | FLOTANTE	{
-		$$ = new_symbol();
-		$$.type = 1;
+		$$ = new_inter_symbol();
+		$$->type = 1;
 		}
   | CARACTER	{
-		$$.type = 3;
+		$$->type = 3;
 		}
   | ID '(' params ')' {}
   ;
@@ -241,23 +289,23 @@ expression:
 // H
 params:
   params ',' expression	{
-			$$ = new_symbol();
+			$$ = new_inter_symbol();
 			}
   | expression		{
-			$$ = new_symbol();
+			$$ = new_inter_symbol();
           		}
   ;
 
 // B
 logical:
   logical OR logical	{
-			$$ = new_symbol();
+			$$ = new_inter_symbol();
 			}
   | logical AND logical	{
-			$$ = nuevo_simbolo();
+			$$ = new_inter_symbol();
 			}
   | '!' logical		{
-			$$ = new_symbol();
+			$$ = new_inter_symbol();
 			}
   | '(' logical ')'	{
 			$$ = $2;
@@ -268,24 +316,39 @@ logical:
   ;
 
 relation:
-  '<'	{
-	$$ = $1;
-	}
-  | '>'	{
-	$$ = $1;
-	}
-  | GE	{
-	$$ = $1;
-	}
-  | LE	{
-	$$ = $1;
+  EQ	{
+	strdup("==");
 	}
   | NEQ	{
-	$$ = $1;
+	$$ = strdup("!=");
 	}
-  | EQ	{
-	$$ = $1;
+  | GE	{
+	$$ = strdup(">=");
+	}
+  | '>'	{
+	$$ = strdup(">");
+	}
+  | LE	{
+	$$ = strdup("<=");
+	}
+  | '<'	{
+	$$ = strdup("<");
 	}
   ;
 
 %%
+
+void yyerror(char *s)
+{
+	fprintf(stderr, "%s\n", s);
+}
+
+void error(char *msg, int line)
+{
+	fprintf(stderr, "Error, line %d: %s\n", line, msg);
+}
+
+void init()
+{
+	table = init_sym_table();
+}
