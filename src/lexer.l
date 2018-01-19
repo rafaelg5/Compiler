@@ -88,11 +88,14 @@ print { return PRINT; }
 
 \"[^\"\n\0<<EOF>>]*\" {
                         yytext[strlen(yytext)-1]='\0';
+
+                        yylval.cad = (char*)malloc(strlen(yytext));
                         yylval.cad = strdup(yytext+1);
                         return CADENA;
                       }
 
 \'\\.\' {
+          yylval.cad = (char*)malloc(strlen(yytext));
           yylval.cad = strdup(yytext);
           return CARACTER;
         }
@@ -110,6 +113,7 @@ print { return PRINT; }
 {blank} {}
 
 {id}  {
+        yylval.id = (char*)malloc(strlen(yytext));
         strcpy(yylval.id, yytext);
         return ID;
       }
