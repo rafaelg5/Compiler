@@ -11,6 +11,7 @@ typedef struct intermediate_symbol {
 	label lnext;
 	label ltrue;
 	label lfalse;
+	label lbreaks;
 	char id[60];
 } symbol;
 
@@ -21,6 +22,7 @@ symbol *new_inter_symbol()
 	s->lnext = create_label();
 	s->ltrue = create_label();
 	s->lfalse = create_label();
+	s->lbreaks = create_label();
 	
 	return s;
 }

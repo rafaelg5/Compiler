@@ -30,23 +30,29 @@ func void logica(){
 func void fors(){
 	int a, b;
 	b = 1;
-	for(a = 0; a = 1; ; a<10 ; a = a+1; b = suma(a,b);)
-		b = b+a+1; print b; return;
+	for(a = 0; a = 1; ; a<10 ; a = a+1; b = suma(a,b);){
+		b = b+a+1; print b; 
+	}
+	return;
 }
 
 func void whiles(){
 	int a, b;
 	a = 0; b = 1;
 
-	while(a +b < 10)
+	while(a +b < 10){
 		a = a*2;
 		b = b-1;
 		break;
-
+	}
 	return;
 }
 
 func void dowhiles(){
 	int a, b;
 	b = 0;
+	do{
+		a = a+1;
+	} while(a<b+5);
+	return;
 }

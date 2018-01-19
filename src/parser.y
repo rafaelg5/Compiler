@@ -262,12 +262,14 @@ sents:
 
     $$->first = $1->first;
     $$->lnext = $2->lnext;
+    $$->lbreaks = merge($1->lbreaks, $2->lbreaks);
   }
   | FOR '(' sents ';' logical ';' sents {
-    
+
     int line = insert_code("goto", "", "", "");
     $7->lnext = insert_in_label($7->lnext, line);
-    } ')' sents	
+
+    } ')' '{' sents	'}'
     {
       $$ = new_inter_symbol();
 
@@ -279,32 +281,35 @@ sents:
 
       backpatch($3->lnext, $5->first);
 
-      backpatch($5->ltrue, $10->first);
-      backpatch($10->lnext, $7->first);
+      backpatch($5->ltrue, $11->first);
+      backpatch($11->lnext, $7->first);
       backpatch($7->lnext, $5->first);
 
-      $$->lnext = $5->lfalse;
+      label temp = merge($3->lbreaks, $7->lbreaks);
+      temp = merge($11->lbreaks, temp);
+
+      $$->lnext = merge($5->lfalse, temp);
     }
-  | DO sents WHILE '(' logical ')' ';'
-  {
-    $$ = new_inter_symbol();
-
-    $$->first = $2->first;
-
-    backpatch($2->lnext, $5->first);
-    backpatch($5->ltrue, $2->first);
-
-    $$->lnext = $5->lfalse;
-  }
-  | WHILE '(' logical ')' sents	
+  | DO '{' sents '}' WHILE '(' logical ')' ';'
   {
     $$ = new_inter_symbol();
 
     $$->first = $3->first;
-    backpatch($3->ltrue, $5->first);
-    backpatch($5->lnext, $3->first);
 
-    $$->lnext = $3->lfalse;
+    backpatch($3->lnext, $7->first);
+    backpatch($7->ltrue, $3->first);
+
+    $$->lnext = merge($7->lfalse, $7->lbreaks);
+  }
+  | WHILE '(' logical ')' '{' sents	'}'
+  {
+    $$ = new_inter_symbol();
+
+    $$->first = $3->first;
+    backpatch($3->ltrue, $6->first);
+    backpatch($6->lnext, $3->first);
+
+    $$->lnext = merge($3->lfalse, $6->lbreaks);
 
     char tmp[10];
     sprintf(tmp, "%d", $3->first);
@@ -317,7 +322,7 @@ sents:
 
     $$->first = $3->first;
     $$->lnext = merge($3->lfalse, $5->lnext);
-
+    $$->lbreaks = $5->lbreaks;
   }
   | IF '(' logical ')' sents ELSE sents	
   {
@@ -329,6 +334,7 @@ sents:
     backpatch($3->lfalse, $7->first);
 
     $$->lnext = merge($5->lnext, $7->lnext);
+    $$->lbreaks = merge($5->lbreaks, $7->lbreaks);
   }
   | SWITCH '(' expression ')' '{' cases case_def '}'	
   {
@@ -337,8 +343,11 @@ sents:
   }
   | BREAK ';'	
   {
-    // TODO
     $$ = new_inter_symbol();
+    int line = insert_code("goto","","","");
+
+    $$->first = line;
+    $$->lbreaks = insert_in_label($$->lbreaks, line);
   }
   | PRINT expression ';'	
   {
@@ -366,6 +375,7 @@ sents:
   {
     $$ = new_inter_symbol();
     int line = insert_code("return", "", "", "");
+    $$->first = line;
   }
   | '{' sents '}'	{
 			$$ = $2;
