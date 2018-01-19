@@ -4,7 +4,7 @@ all:
 	gcc parser.tab.c lex.yy.c sym_table.c type_table.c intermediate_code.c `pkg-config --cflags --libs glib-2.0` -lfl -o parser
 
 tests:
-	src/a.out src/prueba
+	./parser prueba
 
 clean:
-	cd src; rm a.out lex.yy.c *.tab.*;
+	rm parser lex.yy.c *.tab.*;
