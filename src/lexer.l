@@ -62,9 +62,9 @@ case  { return CASE; }
 
 default { return DEFAULT; }
 
-true  { return TRUE; }
+true  { return TRUE_P; }
 
-false { return FALSE; }
+false { return FALSE_P; }
 
 func  { return FUNC; }
 

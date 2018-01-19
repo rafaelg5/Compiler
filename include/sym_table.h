@@ -34,7 +34,8 @@ typedef struct symbol {
 typedef struct sym_table {
   Symbol* table[HT_SIZE];
   struct sym_table* parent;
-  int count;
+  struct sym_table* child;
+  int count, size;
   Type_Table* type_table;
 } Sym_Table;
 
@@ -42,7 +43,7 @@ Sym_Table* init_sym_table();
 Symbol* new_symbol(char*, int, int);
 int hash();
 Symbol* lookup(Sym_Table*, char*);
-Symbol* insert(Sym_Table*, char*, int, int);
+Symbol* insert(Sym_Table*, char*, int, int, int);
 void set_symbol_params(Symbol*, List*);
 
 #endif

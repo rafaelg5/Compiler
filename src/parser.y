@@ -1,7 +1,9 @@
 %{
   #include <string.h>
   #include <stdio.h>
+  #include <glib.h>
   #include "symbol.h"
+  #include "sym_list.h"
   #include "../include/sym_table.h"
 
   extern FILE *yyin;
@@ -32,6 +34,7 @@
   int num;
   double flo;
   struct intermediate_symbol *att;
+  struct _GList* list;
   char *id;
 }
 
@@ -40,12 +43,13 @@
 %token SWITCH CASE BREAK DEFAULT
 %token FOR IF ELSE DO WHILE
 %token FUNC RETURN PRINT
-%token TRUE FALSE ID LE GE EQ NEQ AND OR
+%token TRUE_P FALSE_P ID LE GE EQ NEQ AND OR
 
 %type<num> NUMERO
 %type<flo> FLOTANTE
 %type<cad> CADENA ID CARACTER relation
-%type<att> type type_arr param_arr param_list sents params cases case_def ids arrays expression logical id_list
+%type<att> type type_arr param_arr sents cases case_def ids arrays expression logical id_list arguments
+%type<list> params param_list
 
 %left OR
 %left AND
@@ -62,11 +66,10 @@
 // P -> D F
 program:
   {
-  printf("a\n");
   init();
-  printf("a\n");
   }
-  decs funcs
+  decs
+  funcs
   ;
 
 // D -> T L; D | epsilon
@@ -74,7 +77,6 @@ decs:
   type  {
 	inh_type = $1->type;
 	inh_dim = $1->dim;
-	printf("%d\n", $1->type);
 	}
   id_list ';' decs
   | %empty
@@ -107,25 +109,41 @@ type:
             	$$->type = 4;
             	$$->dim = 0;
             	}
-  | STRUCT '{' decs '}'
+  | STRUCT	{
+		// Create a new table and link it to the current one
+  		Sym_Table *new_table; 
+		new_table = init_sym_table();
+		new_table->parent = table;
+		table->child = new_table;
+		table = new_table;
+		}
+  '{' decs '}'	{
+		Sym_Table *prev = table;
+		table = table->parent;
+		
+		$$ = new_inter_symbol();
+		$$->type = 5;
+		$$->dim = prev->size;
+		}
   ;
 
 // L -> L, id C | id C
 id_list:
-  id_list ','
+  id_list
+  ','
   ID type_arr	{
-		if(lookup(table, $3) != NULL)
+		if(lookup(table, $3) == NULL)
 		{
-			insert(table, $3, $4->type, address);
+			insert(table, $3, $4->type, address, $4->dim);
 			address += $4->dim;
 		} else {
 			error("ID defined twice.", yylineno);
 		}
 		}
   | ID type_arr	{
-		if(lookup(table, $1) != NULL)
+		if(lookup(table, $1) == NULL)
 		{
-			insert(table, $1, $2->type, address);
+			insert(table, $1, $2->type, address, $2->dim);
 			address += $2->dim;
 		} else {
 			error("ID defined twice.", yylineno);
@@ -172,9 +190,10 @@ param_list:
   ID param_arr	{
 		$$ = $1;
 
-		if(lookup(table, $5) != NULL)                              
+		if(lookup(table, $5) == NULL)                              
                 {                                                          
-                        insert(table, $5, $6->type, address);                   
+			$$ = g_list_append($$, $6->type);
+                        insert(table, $5, $6->type, address, $6->dim);                   
                         address += $6->dim;                                     
                 } else {                                                   
                         error("ID defined twice.", yylineno);              
@@ -187,9 +206,10 @@ param_list:
   ID param_arr	{
 		$$ = NULL;
 
-		if(lookup(table, $3) != NULL)                              
+		if(lookup(table, $3) == NULL)                              
                 {                                                          
-                        insert(table, $3, $4->type, address);                   
+			$$ = g_list_append($$, $4->type);
+                        insert(table, $3, $4->type, address, $4->dim);                   
                         address += $4->dim;                                     
                 } else {                                                   
                         error("ID defined twice.", yylineno);              
@@ -199,7 +219,7 @@ param_list:
 
 param_arr:
   '[' ']' param_arr	{
-			$$ = $3;
+			$$ = new_inter_symbol();
 			$$->dim = 8;
 			$$->is_arr = 1;
 			$$->type = $3->type;
@@ -283,17 +303,17 @@ expression:
   | CARACTER	{
 		$$->type = 3;
 		}
-  | ID '(' params ')' {}
+  | ID '(' arguments ')' {}
   ;
 
 // H
-params:
-  params ',' expression	{
-			$$ = new_inter_symbol();
-			}
-  | expression		{
-			$$ = new_inter_symbol();
-          		}
+arguments:
+  arguments ',' expression	{
+				$$ = new_inter_symbol();
+				}
+  | expression			{
+				$$ = new_inter_symbol();
+          			}
   ;
 
 // B
@@ -311,8 +331,8 @@ logical:
 			$$ = $2;
 			}
   | expression relation expression	{}
-  | TRUE	{}
-  | FALSE	{}
+  | TRUE_P	{}
+  | FALSE_P	{}
   ;
 
 relation:

@@ -15,7 +15,9 @@ Sym_Table* init_sym_table(){
       st->table[i] = NULL;
 
     st->count = 0;
+    st->size = 0;
     st->parent = NULL;
+    st->child = NULL;
     st-> type_table = init_type_table();
 
     return st;
@@ -86,7 +88,7 @@ Symbol* lookup(Sym_Table* st, char* name){
 * @param dir la dirección en memoria del símbolo
 * @return un apuntador al nuevo símbolo
 */
-Symbol* insert(Sym_Table* st, char* name, int type, int dir){
+Symbol* insert(Sym_Table* st, char* name, int type, int dir, int dim){
 
   int h = hash(name);
   int index = h % HT_SIZE;
