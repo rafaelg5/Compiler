@@ -186,7 +186,9 @@ funcs:
     char *tmp, *lab;
     tmp = (char*) malloc(strlen($3)+4);
     sprintf(tmp, "%s%s", "end", $3);
-    insert_code("label","","", tmp);
+
+    int line = insert_code("label","","", tmp);
+    backpatch($10->lnext, line);
   }
   funcs
   | %empty
@@ -256,7 +258,15 @@ sents:
   | FOR '(' sents ';' logical ';' sents ')' sents	{}
   | DO sents WHILE '(' logical ')' ';'	{}
   | WHILE '(' logical ')' sents	{}
-  | IF '(' logical ')' sents %prec IFX	{}
+  | IF '(' logical ')' sents %prec IFX	
+  {
+    $$ = new_inter_symbol();
+    backpatch($3->ltrue, $5->first);
+
+    $$->first = $3->first;
+    $$->lnext = merge($3->lfalse, $5->lnext);
+
+  }
   | IF '(' logical ')' sents ELSE sents	{}
   | SWITCH '(' expression ')' '{' cases case_def '}'	{}
   | BREAK ';'	{}
@@ -270,8 +280,13 @@ sents:
     $$ = new_inter_symbol();
 
     char *tmp = strdup("=");
-    insert_code(tmp, $3->id, "", $1->id);
+    int line = insert_code(tmp, $3->id, "", $1->id);
     free(tmp);
+
+    if($3->first == -1)
+      $$->first = line;
+    else
+      $$->first = $3->first;
   }
   ;
 
@@ -391,11 +406,12 @@ expression:
 
     // Temp
     char *tmp = get_temporal();
-    insert_code("call", $1, "", tmp);
 
+    int line = insert_code("call", $1, "", tmp);
     strcpy($$->id, tmp);
-    
     free(tmp);
+
+    $$->first = line;
   }
   ;
 
@@ -403,43 +419,90 @@ expression:
 arguments:
   arguments ',' expression	{
 				$$ = new_inter_symbol();
-        insert_code("push", $3->id, "", "");
+        int line = insert_code("push", $3->id, "", "");
+
+        $$->first = line; 
 				}
   | expression			{
 				$$ = new_inter_symbol();
-        insert_code("push", $1->id, "", "");
-          			}
+        int line = insert_code("push", $1->id, "", "");
+        $$->first = line;
+      }
   ;
 
 // B
 logical:
   logical OR logical	{
-			$$ = operacion($1, $3, "||");
+      $$ = new_inter_symbol();
+      backpatch($1->lfalse, $3->first);
+
+      // first, ltrue, lfalse
+      $$->first = $1->first;
+      $$->ltrue = merge($1->ltrue, $3->ltrue);
+      $$->lfalse = $3->lfalse;
+
 			}
   | logical AND logical	{
-			$$ = operacion($1, $3, "&&");
+			$$ = new_inter_symbol();
+      backpatch($1->ltrue, $3->first);
+
+      // first, ltrue, lfalse
+      $$->first = $1->first;
+      $$->ltrue = $3->ltrue;
+      $$->lfalse = merge($1->lfalse, $3->lfalse);
 			}
   | '!' logical		{
 			$$ = new_inter_symbol();
-      char *tmp = get_temporal();
-      insert_code("!", $2->id, "", tmp);
-      strcpy($$->id, tmp);
-      free(tmp);
+      
+      // first, ltrue, lfalse
+      $$->first = $2->first;
+      $$->ltrue = $2->lfalse;
+      $$->lfalse = $2->ltrue;
+      
 			}
   | '(' logical ')'	{
 			$$ = $2;
 			}
   | expression relation expression	{
-    $$ = operacion($1, $3, $2);
+    $$ = new_inter_symbol();
+
+    char *operacion = strdup("if1234");
+    sprintf(operacion, "if%s", $2);
+
+    int line_true = insert_code(operacion, $1->id, $3->id, "");
+    int line_false = insert_code("goto", "", "", "");
+
+    // first, ltrue, lfalse
+    if($1->first == -1){
+      if($3->first == -1){
+        $$->first = line_true;
+      } else {
+        $$->first = $3->first;
+      }
+    } else{
+      $$->first = $1->first;
+    }
+    
+    $$->ltrue = insert_in_label($$->ltrue, line_true);
+    $$->lfalse = insert_in_label($$->lfalse, line_false);
 
   }
   | TRUE_P	{
     $$ = new_inter_symbol();
-    strcpy($$->id, "true");
+    int line = insert_code("goto", "", "", "");
+
+    // first, ltrue, lfalse
+    $$->first = line;
+    $$->ltrue = insert_in_label($$->ltrue, line);
+
   }
   | FALSE_P	{
     $$ = new_inter_symbol();
-    strcpy($$->id, "false");
+    int line = insert_code("goto", "", "", "");
+
+    // first, ltrue, lfalse
+    $$->first = line;
+    $$->lfalse = insert_in_label($$->lfalse, line);
   }
   ;
 
@@ -487,20 +550,30 @@ symbol *operacion(symbol *arg1, symbol *arg2, char *op){
 
   char *tmp = get_temporal();
 
-  insert_code(op, arg1->id, arg2->id, tmp);
+  // Codigo intermedio
+  int line = insert_code(op, arg1->id, arg2->id, tmp);
 
+  // Valores para compartir
   strcpy(res->id, tmp);
 
+  if(arg1->first != -1)
+    res->first = arg1->first;
+  else if(arg2->first != -1)
+    res->first = arg2->first;
+  else 
+    res->first = line;
+
+  // Limpiar memoria
   free(tmp);
 
   return res;
 }
 
+
 char *get_temporal(){
   temp++;
   char tmp[7];
   sprintf(tmp, "%c%d", 't', temp);
-
   return strdup(tmp);
 }
 
