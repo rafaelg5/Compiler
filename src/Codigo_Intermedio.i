@@ -5,9 +5,9 @@
     2    return        t1                    
     3     label                       endsuma
     4     label                    expresiones
-    5         +         1                  t2
-    6         *                            t3
-    7      push                              
+    5         +         1         a        t2
+    6         *   punto.x                  t3
+    7      push         a                    
     8      push  3.000000                    
     9      call      suma                  t4
    10         /        t3        t4        t5
@@ -19,19 +19,19 @@
    16     label                    endexpresiones
    17     label                        logica
    18         *         1         4        t9
-   19         -                  t9       t10
-   20       if<                 t10        28
+   19         -         b        t9       t10
+   20       if<         a       t10        28
    21      goto                            22
-   22      if>=                            24
+   22      if>=         b         a        24
    23      goto                            27
-   24         +                   5       t11
-   25      if<=                 t11        28
+   24         +         c         5       t11
+   25      if<=         a       t11        28
    26      goto                            27
    27      goto                            28
    28         +         1         3       t12
    29         %         2         5       t13
    30         -       t12       t13       t14
-   31         =       t14                    
+   31         =       t14                   a
    32     label                     endlogica
    33     label                          fors
    34         =         1                   b

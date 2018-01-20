@@ -438,12 +438,26 @@ ids:
   ID	{
     	$$ = new_inter_symbol();
 
-    	if(lookup(table, $1) != NULL)
+	Sym_Table *test_table = table;
+	int found = 0;
+	
+	while(test_table != NULL)
+	{
+		if(lookup(test_table, $1) != NULL)
+		{
+			found = 1;
+			break;
+		}
+
+		test_table = test_table->parent;
+	}
+
+    	if(found)
     	{
       	  //Para el codigo intermedio
       	  strcpy($$->id, $1);
-    	} else {
-      	  error("ID does not exist.", yylineno);
+    	} else { 
+      	  error("ID1 does not exist.", yylineno);
     	}
       }
   | arrays	{
@@ -452,9 +466,23 @@ ids:
   | ID '.' ID	{
     		$$ = new_inter_symbol();
 
-    		if(lookup(table, $1) != NULL)
+		Sym_Table *test_table = table;
+		int found = 0;
+	
+		while(test_table != NULL)
+		{
+			if(lookup(test_table, $1) != NULL)
+			{
+				found = 1;
+				break;
+			}
+	
+			test_table = test_table->parent;
+		}
+
+    		if(found)
     		{
-		  if(lookup(table, $1)->type != 5)
+		  if(lookup(table, $1)->type == 5)
 		  {
 		    //Para el codigo intermedio
     		    sprintf($$->id, "%s.%s", $1, $3);
@@ -462,7 +490,7 @@ ids:
 		    error("ID is not a struct.", yylineno);
 		  }
     		} else {
-      	  	  error("ID does not exist.", yylineno);
+      	  	  error("ID2 does not exist.", yylineno);
     		}
 
   }
@@ -471,23 +499,53 @@ ids:
 arrays:
   ID '[' expression ']'	{
     $$ = new_inter_symbol();
-    if(lookup(table, $1) != NULL)
+
+    Sym_Table *test_table = table;
+    int found = 0;
+	
+    while(test_table != NULL)
+    {
+	if(lookup(test_table, $1) != NULL)
+	{
+	    found = 1;
+	    break;
+	}
+	
+        test_table = test_table->parent;
+    }
+
+    if(found)
     {
       //Para el codigo intermedio
       sprintf($$->id, "%s[%s]", $1, $3->id);
     } else {
-      error("ID does not exist.", yylineno);
+      error("ID3 does not exist.", yylineno);
     }
   }
   | arrays '[' expression ']'	{
     $$ = new_inter_symbol();
 
-    if(lookup(table, $1->id) != NULL)
+    Sym_Table *test_table = table;
+    int found = 0;
+	
+    printf("looking for %s\n", $1->id);
+    while(test_table != NULL)
+    {
+	if(lookup(test_table, $1->id) != NULL)
+	{
+	    found = 1;
+	    break;
+	}
+	
+        test_table = test_table->parent;
+    }
+
+    if(found)
     {
       //Para el codigo intermedio
       sprintf($$->id, "%s[%s]", $1->id, $3->id);
     } else {
-      error("ID does not exist.", yylineno);
+      error("ID4 does not exist.", yylineno);
     }
   }
   ;
