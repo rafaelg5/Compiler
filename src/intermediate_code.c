@@ -41,10 +41,13 @@ void backpatch(label l, int inst){
 }
 
 void print_code(){
-	printf("*** CODIGO INTERMEDIO ***\n");
-    printf("inst\top\targ1\targ2\tdest\n");
+	FILE *fp;
+	fp = fopen("Codigo_Intermedio.i", "w");// "w" means that we are going to write on this file
+
+	fprintf(fp,"************ CODIGO INTERMEDIO **************\n");
+    fprintf(fp,"%5s%10s%10s%10s%10s\n","inst","op","arg1","arg2","dest");
     for(int i=0; i <CODE.size ;i++){
-        printf("%d\t%s\t%s\t%s\t%s\n",i, CODE.code[i].op, CODE.code[i].arg1, CODE.code[i].arg2, CODE.code[i].dest);
+        fprintf(fp, "%5d%10s%10s%10s%10s\n",i, CODE.code[i].op, CODE.code[i].arg1, CODE.code[i].arg2, CODE.code[i].dest);
     }
 }
 

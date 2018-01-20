@@ -8,6 +8,7 @@ int commentDepth = 0;
 %}
 
 %x comment
+%x linecomment
 
 %option noyywrap
 %option yylineno
@@ -21,12 +22,16 @@ misc [.;:,{}\[\]()]
 %%
 
 "/*" BEGIN(comment);
+"//" BEGIN(linecomment);
 
 <comment>[^*\n]*        {}
 <comment>"*"+[^*/\n]*   {}
 <comment>\n             ++yylineno;
 <comment>"*"+"/"        BEGIN(INITIAL);
 <comment><<EOF>>        yyerror("Comentario sin cerrar");
+
+<linecomment>\n         {++yylineno; BEGIN(INITIAL);}
+<linecomment>.   {}
 
 
 int { return INT; }
@@ -117,6 +122,6 @@ print { return PRINT; }
         return ID;
       }
 
-. { printf("ERROR: %s en la línea %d\n", yytext, yylineno); }
+. { printf("ERROR LEXICO: %s en la línea %d\n", yytext, yylineno); }
 
 %%

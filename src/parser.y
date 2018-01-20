@@ -721,7 +721,7 @@ relation:
 
 void yyerror(char *s)
 {
-	fprintf(stderr, "%s en linea %d\n", s, yylineno);
+	fprintf(stderr, "Error: '%s'. Con el token '%s' en linea %d\n", s, yytext, yylineno);
   exit(1);
 }
 

@@ -19,6 +19,8 @@ func int suma(int a, int b){
 	return a+b;
 }
 
+// Comentario de linea
+// Ejemplo de expresiones
 func void expresiones(){
 	int b[3], c[10][3];
 	struct {
