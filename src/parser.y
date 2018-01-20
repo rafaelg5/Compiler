@@ -121,12 +121,12 @@ type:
             	$$->dim = 0;
             	}
   | STRUCT	{
-		// Create a new table and link it to the current one
+		  // Create a new table and link it to the current one
   		Sym_Table *new_table; 
-		new_table = init_sym_table();
-		new_table->parent = table;
-		table->child = new_table;
-		table = new_table;
+		  new_table = init_sym_table();
+		  new_table->parent = table;
+		  table->child = new_table;
+		  table = new_table;
 		}
   '{' decs '}'	{
 		Sym_Table *prev = table;
@@ -181,10 +181,22 @@ type_arr:
 funcs:
   FUNC type ID 
   {
+    // Create a new table and link it to the current one
+      Sym_Table *new_table; 
+      new_table = init_sym_table();
+      new_table->parent = table;
+      table->child = new_table;
+      table = new_table;
+
+    // Codigo intermedio
     insert_code("label","","", $3);
   }
   '(' params ')' '{' decs sents '}' 
   {
+    // Table
+    Sym_Table *prev = table;
+    table = table->parent;
+
     char *tmp, *lab;
     tmp = (char*) malloc(strlen($3)+4);
     sprintf(tmp, "%s%s", "end", $3);
