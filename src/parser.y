@@ -417,47 +417,78 @@ sents:
   | ids '=' expression ';'	{
     $$ = new_inter_symbol();
 
-    char *tmp = strdup("=");
-    int line = insert_code(tmp, $3->id, "", $1->id);
-    free(tmp);
+    if($1->type == $3->type)
+    {
 
-    if($3->first == -1)
-      $$->first = line;
-    else
-      $$->first = $3->first;
+      char *tmp = strdup("=");
+      int line = insert_code(tmp, $3->id, "", $1->id);
+      free(tmp);
+
+      if($3->first == -1)
+        $$->first = line;
+      else
+        $$->first = $3->first;
+    } else {
+      error("Type mismatch.", yylineno);
+    }
   }
   ;
 
 ids:
   ID	{
-    $$ = new_inter_symbol();
+    	$$ = new_inter_symbol();
 
-    //Para el codigo intermedio
-    strcpy($$->id, $1);
-  }
+    	if(lookup(table, $1) != NULL)
+    	{
+      	  //Para el codigo intermedio
+      	  strcpy($$->id, $1);
+    	} else {
+      	  error("ID does not exist.", yylineno);
+    	}
+      }
   | arrays	{
     $$ = $1;
   }
-  | ID '.' ID {
-    $$ = new_inter_symbol();
+  | ID '.' ID	{
+    		$$ = new_inter_symbol();
 
-    //Para el codigo intermedio
-    sprintf($$->id, "%s.%s", $1, $3);
+    		if(lookup(table, $1) != NULL)
+    		{
+		  if(lookup(table, $1)->type != 5)
+		  {
+		    //Para el codigo intermedio
+    		    sprintf($$->id, "%s.%s", $1, $3);
+		  } else {
+		    error("ID is not a struct.", yylineno);
+		  }
+    		} else {
+      	  	  error("ID does not exist.", yylineno);
+    		}
+
   }
   ;
 
 arrays:
   ID '[' expression ']'	{
     $$ = new_inter_symbol();
-
-    //Para el codigo intermedio
-    sprintf($$->id, "%s[%s]", $1, $3->id);
+    if(lookup(table, $1) != NULL)
+    {
+      //Para el codigo intermedio
+      sprintf($$->id, "%s[%s]", $1, $3->id);
+    } else {
+      error("ID does not exist.", yylineno);
+    }
   }
   | arrays '[' expression ']'	{
     $$ = new_inter_symbol();
 
-    //Para el codigo intermedio
-    sprintf($$->id, "%s[%s]", $1->id, $3->id);
+    if(lookup(table, $1->id) != NULL)
+    {
+      //Para el codigo intermedio
+      sprintf($$->id, "%s[%s]", $1->id, $3->id);
+    } else {
+      error("ID does not exist.", yylineno);
+    }
   }
   ;
 
@@ -512,86 +543,124 @@ case_def:
 
 expression:
   expression '*' expression	{
-  				// Generar codigo intermedio
+  	int t1 = ($1->type == 0 || $1->type == 1 || $1->type == 2);
+	int t2 = ($3->type == 0 || $3->type == 1 || $3->type == 2);
+
+	if(t1 && t2)
+	{
+	  // Generar codigo intermedio
           char *tmp = strdup("*");
           $$ = operacion($1, $3, tmp);
           free(tmp);
+	} else {
+	  error("Multiplication needs numeric types.", yylineno);
+	}
 				}
   | expression '/' expression	{
-  				// Generar codigo intermedio
+  	int t1 = ($1->type == 0 || $1->type == 1 || $1->type == 2);
+	int t2 = ($3->type == 0 || $3->type == 1 || $3->type == 2);
+
+	if(t1 && t2)
+	{
+	  // Generar codigo intermedio
           char *tmp = strdup("/");
           $$ = operacion($1, $3, tmp);
           free(tmp);
+	} else {
+	  error("Division needs numeric types.", yylineno);
+	}
 				}
   | expression '+' expression	{
-          // Generar codigo intermedio
+        int t1 = ($1->type == 0 || $1->type == 1 || $1->type == 2);
+	int t2 = ($3->type == 0 || $3->type == 1 || $3->type == 2);
+
+	if(t1 && t2)
+	{
+	  // Generar codigo intermedio
           char *tmp = strdup("+");
           $$ = operacion($1, $3, tmp);
           free(tmp);
-				}
+	} else {
+	  error("Addition needs numeric types.", yylineno);
+	}
+			}
   | expression '-' expression	{
-  				// Generar codigo intermedio
+	int t1 = ($1->type == 0 || $1->type == 1 || $1->type == 2);
+	int t2 = ($3->type == 0 || $3->type == 1 || $3->type == 2);
+
+	if(t1 && t2)
+	{
+  	  // Generar codigo intermedio
           char *tmp = strdup("-");
           $$ = operacion($1, $3, tmp);
           free(tmp);
+	} else {
+	  error("Substraction needs numeric types.", yylineno);
+	}
 				}
   | expression '%' expression	{
-  				// Generar codigo intermedio
+
+	if($1->type == 0 || $3->type == 0)
+	{
+  	  // Generar codigo intermedio
           char *tmp = strdup("%");
           $$ = operacion($1, $3, tmp);
           free(tmp);
+	} else {
+	  error("Modulo requires integers.", yylineno);
+	}
 				}
   | ids	{
-	 $$ = new_inter_symbol();
-	 $$->type = $1->type;
+	$$ = new_inter_symbol();
+	$$->type = $1->type;
 
-   //Para el codigo intermedio
-    sprintf($$->id, "%s", $1->id);
+   	//Para el codigo intermedio
+    	sprintf($$->id, "%s", $1->id);
 	}
   | CADENA	{
-    $$ = new_inter_symbol();
+    	$$ = new_inter_symbol();
 
-    //Para el codigo intermedio
-    sprintf($$->id, "\"%s\"", $1);
+    	//Para el codigo intermedio
+    	sprintf($$->id, "\"%s\"", $1);
   }
 
   | NUMERO	{
-		$$ = new_inter_symbol();
-		$$->type = 0;
+	$$ = new_inter_symbol();
+	$$->type = 0;
 
-    // Para el codigo intermedio
-    sprintf($$->id, "%d", $1);
+   	// Para el codigo intermedio
+   	sprintf($$->id, "%d", $1);
 		}
   | FLOTANTE	{
-		$$ = new_inter_symbol();
-		$$->type = 1;
+	$$ = new_inter_symbol();
+	$$->type = 1;
 
-    // Para el codigo intermedio
-    sprintf($$->id, "%f", $1);
+    	// Para el codigo intermedio
+    	sprintf($$->id, "%f", $1);
 		}
   | CARACTER	{
-    $$ = new_inter_symbol();
-		$$->type = 3;
+    	$$ = new_inter_symbol();
+	$$->type = 3;
 
-    //Para el codigo intermedio
-    sprintf($$->id, "'%c'", $1);
+    	//Para el codigo intermedio
+    	sprintf($$->id, "'%c'", $1);
 		}
   | ID '(' arguments ')' {
-    // Para el codigo intermedio 
-    // falta hacer el llamado a la funcion aqui
-    $$ = new_inter_symbol();
+    	// Para el codigo intermedio 
+    	// falta hacer el llamado a la funcion aqui
+    	$$ = new_inter_symbol();
 
-    // Temp
-    char *tmp = get_temporal();
+    	// Temp
+    	char *tmp = get_temporal();
 
-    int line = insert_code("call", $1, "", tmp);
-    strcpy($$->id, tmp);
-    free(tmp);
+    	int line = insert_code("call", $1, "", tmp);
+    	strcpy($$->id, tmp);
+    	free(tmp);
 
-    if($3->first == -1)
-      $$->first = line;
-    else
-      $$->first = $3->first;
+    	if($3->first == -1)
+      	  $$->first = line;
+    	else
+      	  $$->first = $3->first;
   }
   ;
 
@@ -654,29 +723,38 @@ logical:
 			$$ = $2;
 			}
   | expression relation expression	{
+
     $$ = new_inter_symbol();
 
-    char *operacion = strdup("if1234");
-    sprintf(operacion, "if%s", $2);
+    int t1 = ($1->type == 0 || $1->type == 1 || $1->type == 2);
+    int t2 = ($3->type == 0 || $3->type == 1 || $3->type == 2);
 
-    int line_true = insert_code(operacion, $1->id, $3->id, "");
-    int line_false = insert_code("goto", "", "", "");
+    if(t1 && t2)
+    {
+      char *operacion = strdup("if1234");
+      sprintf(operacion, "if%s", $2);
 
-    // first, ltrue, lfalse
-    if($1->first == -1){
-      if($3->first == -1){
-        $$->first = line_true;
-      } else {
-        $$->first = $3->first;
+      int line_true = insert_code(operacion, $1->id, $3->id, "");
+      int line_false = insert_code("goto", "", "", "");
+
+      // first, ltrue, lfalse
+      if($1->first == -1){
+        if($3->first == -1){
+          $$->first = line_true;
+        } else {
+          $$->first = $3->first;
+        }
+      } else{
+        $$->first = $1->first;
       }
-    } else{
-      $$->first = $1->first;
-    }
     
-    $$->ltrue = insert_in_label($$->ltrue, line_true);
-    $$->lfalse = insert_in_label($$->lfalse, line_false);
+      $$->ltrue = insert_in_label($$->ltrue, line_true);
+      $$->lfalse = insert_in_label($$->lfalse, line_false);
+    } else {
+      error("Operation needs numeric types.", yylineno);
+    }
 
-  }
+      }
   | TRUE_P	{
     $$ = new_inter_symbol();
     int line = insert_code("goto", "", "", "");
