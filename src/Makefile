@@ -17,4 +17,4 @@ tests:
 	./parser prueba
 
 clean:
-	rm parser lex.yy.c *.tab.* parser.output;
+	rm parser syntax lex.yy.c *.tab.* parser.output;
