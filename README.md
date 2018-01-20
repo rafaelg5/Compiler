@@ -34,6 +34,7 @@ S -> while( B ) { S1 }
 
 
 Que puede hacer:
+
 	[4] Reconoce el 100% de los tokens
 
 	[4] Reconoce mas de un tipo comentarios haciendo uso de estados léxicos en lex
