@@ -15,26 +15,26 @@ int commentDepth = 0;
 
 id [a-zA-Z_][a-zA-Z0-9_]*
 integer [0-9]+
-blank [ \f\r\t\v]
+blank [ \f\r\t\v\n]
 operator [-+\*\/%=!<>]
 misc [.;:,{}\[\]()]
 
 %%
 
-\n  ++yylineno;
+
 {blank}+  ;
 
 "/*" BEGIN(comment);
 "//" BEGIN(linecomment);
 
-<comment>[^*\n]*        {}
-<comment>"*"+[^*/\n]*   {}
-<comment>\n             ++yylineno;
+<comment>[^*\n]*        ;
+<comment>"*"+[^*/\n]*   ;
+<comment>\n             ;
 <comment>"*"+"/"        BEGIN(INITIAL);
 <comment><<EOF>>        yyerror("Comentario sin cerrar");
 
-<linecomment>\n         {++yylineno; BEGIN(INITIAL);}
-<linecomment>.   {}
+<linecomment>\n         BEGIN(INITIAL);
+<linecomment>.  ;
 
 
 int { return INT; }
