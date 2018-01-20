@@ -15,11 +15,14 @@ int commentDepth = 0;
 
 id [a-zA-Z_][a-zA-Z0-9_]*
 integer [0-9]+
-blank [ \t\n]
+blank [ \f\r\t\v]
 operator [-+\*\/%=!<>]
 misc [.;:,{}\[\]()]
 
 %%
+
+\n  ++yylineno;
+{blank}+  ;
 
 "/*" BEGIN(comment);
 "//" BEGIN(linecomment);
@@ -113,8 +116,6 @@ print { return PRINT; }
                             yylval.flo = atof(yytext);
                             return FLOTANTE;
                           }
-
-{blank} {}
 
 {id}  {
         yylval.id = (char*)malloc(strlen(yytext));
