@@ -661,6 +661,7 @@ expression:
 	}
   | CADENA	{
     	$$ = new_inter_symbol();
+	$$->type = 6;
 
     	//Para el codigo intermedio
     	sprintf($$->id, "\"%s\"", $1);
