@@ -457,8 +457,9 @@ ids:
       	  //Para el codigo intermedio
       	  strcpy($$->id, $1);
     	} else { 
-      	  error("ID1 does not exist.", yylineno);
-    	}
+	  error($1, yylineno);
+      	  error("ID does not exist", yylineno);
+ 	}
       }
   | arrays	{
     $$ = $1;
@@ -487,11 +488,13 @@ ids:
 		    //Para el codigo intermedio
     		    sprintf($$->id, "%s.%s", $1, $3);
 		  } else {
-		    error("ID is not a struct.", yylineno);
+		    error($1, yylineno);
+      	  	    error("ID is not a struct.", yylineno);
 		  }
     		} else {
-      	  	  error("ID2 does not exist.", yylineno);
-    		}
+      	  	  error($1, yylineno);
+      	  	  error("ID does not exist", yylineno);
+		}
 
   }
   ;
@@ -519,34 +522,15 @@ arrays:
       //Para el codigo intermedio
       sprintf($$->id, "%s[%s]", $1, $3->id);
     } else {
-      error("ID3 does not exist.", yylineno);
+      error($1, yylineno);
+      error("ID does not exist", yylineno);
     }
   }
   | arrays '[' expression ']'	{
     $$ = new_inter_symbol();
 
-    Sym_Table *test_table = table;
-    int found = 0;
-	
-    printf("looking for %s\n", $1->id);
-    while(test_table != NULL)
-    {
-	if(lookup(test_table, $1->id) != NULL)
-	{
-	    found = 1;
-	    break;
-	}
-	
-        test_table = test_table->parent;
-    }
-
-    if(found)
-    {
-      //Para el codigo intermedio
-      sprintf($$->id, "%s[%s]", $1->id, $3->id);
-    } else {
-      error("ID4 does not exist.", yylineno);
-    }
+    //Para el codigo intermedio
+    sprintf($$->id, "%s[%s]", $1->id, $3->id);
   }
   ;
 

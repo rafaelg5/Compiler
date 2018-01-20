@@ -6,7 +6,7 @@
     3     label                       endsuma
     4     label                    expresiones
     5         +         1         a        t2
-    6         *   punto.x                  t3
+    6         *   punto.x   c[0][1]        t3
     7      push         a                    
     8      push  3.000000                    
     9      call      suma                  t4
