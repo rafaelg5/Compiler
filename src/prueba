@@ -56,3 +56,20 @@ func void dowhiles(){
 	} while(a<b+5);
 	return;
 }
+
+func void switches(){
+	int a; int b, c, d;
+	switch(a+3){
+		case: 1
+			print a;
+			break;
+		case: 2
+			print b;
+			break;
+		default:
+			print c;
+			break;
+	}
+	print d;
+	return;
+}

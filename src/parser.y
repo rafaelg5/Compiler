@@ -31,6 +31,9 @@
 
   symbol *operacion(symbol *arg1, symbol *arg2, char *op);
   char *get_temporal();
+
+  char *aux_id;
+  int aux_int_true, aux_int_false;
 %}
 
 %start program
@@ -54,7 +57,7 @@
 %type<num> NUMERO
 %type<flo> FLOTANTE
 %type<cad> CADENA ID CARACTER relation
-%type<att> type type_arr param_arr sents cases case_def ids arrays expression logical id_list arguments
+%type<att> type type_arr param_arr sents cases case_def ids arrays expression logical id_list arguments data
 %type<list> params param_list
 
 %left OR
@@ -336,10 +339,30 @@ sents:
     $$->lnext = merge($5->lnext, $7->lnext);
     $$->lbreaks = merge($5->lbreaks, $7->lbreaks);
   }
-  | SWITCH '(' expression ')' '{' cases case_def '}'	
+  | SWITCH '(' expression {
+    aux_id = strdup($3->id);
+  }')' '{' cases case_def '}'	
   {
-    // TODO
+    free(aux_id);
     $$ = new_inter_symbol();
+
+    if($3->first != -1)
+      $$->first = $3->first;
+    else if($7->first != -1)
+      $$->first = $7->first;
+    else if($8->first != -1)
+      $$->first = $8->first;
+    else{
+      int line = insert_code("nop", "", "", "");
+      $$->first = line;
+    }
+
+    if($8->first != -1){
+      backpatch($7->lnext, $8->first);
+    }
+    
+    label temp = merge($7->lbreaks, $8->lbreaks);
+    $$->lnext = merge(temp, $8->lnext);
   }
   | BREAK ';'	
   {
@@ -428,19 +451,52 @@ arrays:
   ;
 
 cases:
-  CASE ':' NUMERO sents cases 
-  {
-    //TODO
+  CASE ':' NUMERO data {
+    char tmp[20];
+    sprintf(tmp, "%d", $3);
+    strcpy(CODE.code[$4->ltrue.code_lines[$4->ltrue.size-1]].arg2, tmp);
   }
-  | %empty	{}
+   sents cases {
+    backpatch($4->ltrue, $6->first);
+
+    $$ = new_inter_symbol(); 
+
+    $$->first = $4->ltrue.code_lines[$4->ltrue.size-1];
+    $$->lnext = merge($6->lnext, $4->lfalse);
+
+    if($7->first != -1){
+      backpatch($$->lnext, $7->first);
+      $$->lnext = $7->lnext;
+    }
+
+    $$->lbreaks = merge($6->lbreaks, $7->lbreaks);
+
+
+  }
+  | %empty	{ $$ = new_inter_symbol();}
+  ;
+
+data:
+  %empty {
+    $$ = new_inter_symbol(); 
+    char temp[10];
+    sprintf(temp, "%d", 0);
+
+    int line_true = insert_code("if==", aux_id, temp, "");
+    int line_false = insert_code("goto","","","");
+
+    $$->ltrue = insert_in_label($$->ltrue, line_true);
+    $$->lfalse = insert_in_label($$->lfalse, line_false);
+  }
   ;
 
 case_def:
   DEFAULT ':' sents	
   {
-    //TODO
+    $$ = $3;
+    
   }
-  | %empty	{}
+  | %empty	{$$ = new_inter_symbol();}
   ;
 
 expression:
