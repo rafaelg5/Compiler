@@ -42,17 +42,10 @@ Que puede hacer:
 	[4] Reporta el tipo de error, la línea y token con el que ocurrio el error sintactico
 	[4] En el archivo yacc se hace una clara división entre el análisis sintáttico y semántico
 	[3] El programa en yacc compila, pero manda mensajes de advertencia, aunque se ejecuta de forma correcta
-
-GESTOR DE TIPOS				¿El gestor de tipos valida?
-DECLARACION DE VARIABLES	¿Se revisa que las variables no se dupliquen al declaradas, se valida que antes de usarlas estas se hayan declarado?
-ERRORES SEMANTICOS			¿Reporta el tipo de error, la línea y token con el que ocurrio el error semantico?
-TABLAS DE SIMBOLOS Y PILA	¿Se maneja una estructura dinámica para el manejo de la tabla de símbolos y funciona correctamente?
-TABLAS DE TIPOS 			¿Se hace uso de una estructura en memoria dinámica y funciona?
-
-	
-	[4] Se genera código intermedio de todas las partes de la gramática donde se puede generar código
-				El codigo intermedio se produce en el archivo "Codigo_Intermedio.i"
-
-CODIGO OBJETO				¿Se genera del código intermedio, el código objeto usando algun algoritmo de generación optimo?
-
-
+	[4] El gestor de tipos valida los tipos, hace conversion de tipos para operar con ellos.
+	[4] Se valida revisa que las variables no sean duplicadas, y sean declaradas antes de usarse.
+	[3] Reporta el tipo de error, y la linea con la que ocurrio el error.
+	[4] Se maneja una estructura dinamica para el manejo de la tabla de simbolos y funciona correctamente.
+	[4] Se hace uso de una estructura en memoria dinamica y funciona.
+	[4] Se genera codigo intermedio de todas las partes de la gramatica donde se puede generar codigo. El codigo intermedio se produce en el archivo "Codigo_Intermedio.i"
+	[0] No se genera codigo objeto.
