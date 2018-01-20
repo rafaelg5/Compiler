@@ -33,7 +33,6 @@
   char *get_temporal();
 
   char *aux_id;
-  int aux_int_true, aux_int_false;
 %}
 
 %start program
@@ -711,6 +710,7 @@ relation:
 void yyerror(char *s)
 {
 	fprintf(stderr, "%s en linea %d\n", s, yylineno);
+  exit(1);
 }
 
 void error(char *msg, int line)

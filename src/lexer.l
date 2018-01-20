@@ -20,15 +20,14 @@ misc [.;:,{}\[\]()]
 
 %%
 
-<comment>
-{
-\n  { ++yylineno; }
-"*/"  { commentDepth--; if(commentDepth == 0) BEGIN(INITIAL); }
-"/*"  { commentDepth++; }
-<<EOF>> { yyerror("Comentario sin cerrar"); }
-[^*/\n]*  { } // ignorar todo lo que no sea '*' o '/'
-. { } // Ignorar cualquier otro caracter
-}
+"/*" BEGIN(comment);
+
+<comment>[^*\n]*        {}
+<comment>"*"+[^*/\n]*   {}
+<comment>\n             ++yylineno;
+<comment>"*"+"/"        BEGIN(INITIAL);
+<comment><<EOF>>        yyerror("Comentario sin cerrar");
+
 
 int { return INT; }
 

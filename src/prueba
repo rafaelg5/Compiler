@@ -1,3 +1,6 @@
+/*
+	Declaraciones
+*/
 int a, b;
 float c;
 double d;
@@ -7,6 +10,10 @@ struct {
 	int x;
 	char y;
 } s;
+
+/*
+	Ejemplo funcion simple
+*/
 
 func int suma(int a, int b){
 	return a+b;
